@@ -33,13 +33,13 @@ const Page: FC = () => (
 				<Input name="url" type="url" placeholder="Enter URL" required className="w-full" />
 				<div className="flex items-center justify-between">
 					<label className="inline-flex items-center">
-						<input 
-							type="checkbox" 
-							name="reload" 
-							value="1" 
+						<input
+							type="checkbox"
+							name="reload"
+							value="1"
 							className="h-5 w-5 text-blue-500 bg-gray-100 rounded border border-gray-400 shadow-sm 
 							focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-							hover:bg-blue-50 checked:bg-blue-500 transition duration-200" 
+							hover:bg-blue-50 checked:bg-blue-500 transition duration-200"
 						/>
 						<span className="ml-2 text-sm">Force Reload</span>
 					</label>

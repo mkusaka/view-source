@@ -19,20 +19,20 @@ A small Cloudflare Workers app that lets you fetch and view the raw HTML (or oth
 
 ## Tech Stack
 
-- **Runtime**: Cloudflare Workers  
-- **Framework**: Hono.js (server-side JSX)  
-- **Syntax Highlighter**: Shiki (JavaScript regex engine)  
-- **Styling**: Tailwind CSS (via CDN)  
-- **Language**: TypeScript  
-- **Package Manager**: pnpm  
-- **CLI & Deploy**: Wrangler  
+- **Runtime**: Cloudflare Workers
+- **Framework**: Hono.js (server-side JSX)
+- **Syntax Highlighter**: Shiki (JavaScript regex engine)
+- **Styling**: Tailwind CSS (via CDN)
+- **Language**: TypeScript
+- **Package Manager**: pnpm
+- **CLI & Deploy**: Wrangler
 
 ## Getting Started
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v16 or newer)  
-- [pnpm](https://pnpm.io/)  
+- [Node.js](https://nodejs.org/) (v16 or newer)
+- [pnpm](https://pnpm.io/)
 - [Wrangler CLI](https://developers.cloudflare.com/workers/cli-wrangler/) (v4+)
 
 ### Install
@@ -41,3 +41,4 @@ A small Cloudflare Workers app that lets you fetch and view the raw HTML (or oth
 git clone https://github.com/your-username/view-source.git
 cd view-source
 pnpm install
+```
