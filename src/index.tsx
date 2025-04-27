@@ -11,16 +11,16 @@ import { Button } from './components/ui/button';
 
 const app = new Hono();
 
-// Shiki 初期化（WASM 不要の JS エンジン利用）
+// Shiki initialization (using JS engine without WASM)
 const highlighterPromise = createHighlighterCore({
 	langs: [htmlLang],
 	themes: [githubDark],
 	engine: createJavaScriptRegexEngine(),
 });
 
-// 1) ルート：フォームページを JSX で返す
+// 1) Root: Return form page with JSX
 const Page: FC = () => (
-	<html lang="ja">
+	<html lang="en">
 		<head>
 			<meta charSet="UTF-8" />
 			<meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -30,13 +30,13 @@ const Page: FC = () => (
 		</head>
 		<body className="min-h-screen flex items-center justify-center bg-gray-100">
 			<form method="get" action="/preview" className="bg-white p-6 rounded shadow-md space-y-4">
-				<Input name="url" type="url" placeholder="表示したいページの URL" required className="w-full" />
+				<Input name="url" type="url" placeholder="URL of the page to display" required className="w-full" />
 				<div className="flex items-center space-x-2">
 					<label className="inline-flex items-center">
 						<input type="checkbox" name="reload" value="1" className="form-checkbox" />
-						<span className="ml-2 text-sm">強制リロード</span>
+						<span className="ml-2 text-sm">Force Reload</span>
 					</label>
-					<Button type="submit">プレビュー</Button>
+					<Button type="submit">Preview</Button>
 				</div>
 			</form>
 		</body>
@@ -44,13 +44,13 @@ const Page: FC = () => (
 );
 app.get('/', (c) => c.html(<Page />));
 
-// 2) /preview: ハイライト HTML をフルページ返却
+// 2) /preview: Return full page with highlighted HTML
 app.get('/preview', async (c) => {
 	const url = c.req.query('url');
 	const reload = c.req.query('reload');
 	if (!url) return c.text('Missing URL', 400);
 
-	// キャッシュ制御（reload がなければ Edge キャッシュを返却）
+	// Cache control (return Edge cache if reload is not specified)
 	const cacheKey = new Request(c.req.raw.url);
 	if (!reload) {
 		const cached = await caches.default.match(cacheKey);
@@ -72,18 +72,18 @@ app.get('/preview', async (c) => {
 		return c.text(`Error: ${e.message}`, 502);
 	}
 
-	// レスポンス組み立て
+	// Build response
 	const html = `<!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Preview: ${url}</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  /* <pre> を折り返す */
+  /* Wrap <pre> */
   pre {
-    white-space: pre-wrap;    /* 折り返しを有効化 */
-    word-break: break-word;   /* 単語内でも折り返し */
+    white-space: pre-wrap;    /* Enable text wrapping */
+    word-break: break-word;   /* Break within words if needed */
   }
 </style>
 </head>
@@ -95,7 +95,7 @@ ${snippet}
 	const res = new Response(html, {
 		headers: { 'Content-Type': 'text/html; charset=utf-8' },
 	});
-	res.headers.set('Cache-Control', 'public, max-age=300'); // TTL 5 分
+	res.headers.set('Cache-Control', 'public, max-age=300'); // TTL 5 minutes
 	await caches.default.put(cacheKey, res.clone());
 
 	return res;
