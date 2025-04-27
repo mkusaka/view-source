@@ -1,65 +1,58 @@
-// src/App.tsx
-
+// src/react-app/App.tsx
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import cloudflareLogo from "./assets/Cloudflare_Logo.svg";
-import honoLogo from "./assets/hono.svg";
-import "./App.css";
+import { Input } from "../components/ui/input";
+import { Button } from "../components/ui/button";
 
 function App() {
-  const [count, setCount] = useState(0);
-  const [name, setName] = useState("unknown");
+  const [url, setUrl] = useState("");
+  const [sourceHtml, setSourceHtml] = useState<string>();
+  const [error, setError] = useState<string>();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(undefined);
+    setSourceHtml(undefined);
+
+    if (!url) {
+      setError("URL を入力してください");
+      return;
+    }
+
+    try {
+      const resp = await fetch(`/api/source?url=${encodeURIComponent(url)}`);
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(text || resp.statusText);
+      }
+      const html = await resp.text();
+      setSourceHtml(html);
+    } catch (e: unknown) {
+      setError(`取得エラー: ${e instanceof Error ? e.message : '不明なエラー'}`);
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-        <a href="https://hono.dev/" target="_blank">
-          <img src={honoLogo} className="logo cloudflare" alt="Hono logo" />
-        </a>
-        <a href="https://workers.cloudflare.com/" target="_blank">
-          <img
-            src={cloudflareLogo}
-            className="logo cloudflare"
-            alt="Cloudflare logo"
-          />
-        </a>
-      </div>
-      <h1>Vite + React + Hono + Cloudflare</h1>
-      <div className="card">
-        <button
-          onClick={() => setCount((count) => count + 1)}
-          aria-label="increment"
-        >
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <div className="card">
-        <button
-          onClick={() => {
-            fetch("/api/")
-              .then((res) => res.json() as Promise<{ name: string }>)
-              .then((data) => setName(data.name));
-          }}
-          aria-label="get name"
-        >
-          Name from API is: {name}
-        </button>
-        <p>
-          Edit <code>worker/index.ts</code> to change the name
-        </p>
-      </div>
-      <p className="read-the-docs">Click on the logos to learn more</p>
-    </>
+    <div className="max-w-2xl mx-auto p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="flex gap-2">
+        <Input
+          type="url"
+          placeholder="表示したいページの URL を入力"
+          value={url}
+          onChange={(e) => setUrl(e.currentTarget.value)}
+          className="flex-1"
+        />
+        <Button type="submit">表示</Button>
+      </form>
+
+      {error && <div className="text-red-600">{error}</div>}
+
+      {sourceHtml && (
+        <div
+          className="prose max-w-full overflow-auto rounded-md border p-4 bg-gray-50 dark:bg-gray-800"
+          dangerouslySetInnerHTML={{ __html: sourceHtml }}
+        />
+      )}
+    </div>
   );
 }
 
