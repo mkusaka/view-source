@@ -29,11 +29,18 @@ const Page: FC = () => (
 			<script src="https://cdn.tailwindcss.com"></script>
 		</head>
 		<body className="min-h-screen flex items-center justify-center bg-gray-100">
-			<form method="get" action="/preview" className="bg-white p-6 rounded shadow-md space-y-4">
-				<Input name="url" type="url" placeholder="URL of the page to display" required className="w-full" />
-				<div className="flex items-center space-x-2">
+			<form method="get" action="/preview" className="bg-white p-6 rounded shadow-md space-y-4 w-full max-w-md md:max-w-lg lg:max-w-xl">
+				<Input name="url" type="url" placeholder="Enter URL" required className="w-full" />
+				<div className="flex items-center justify-between">
 					<label className="inline-flex items-center">
-						<input type="checkbox" name="reload" value="1" className="form-checkbox" />
+						<input 
+							type="checkbox" 
+							name="reload" 
+							value="1" 
+							className="h-5 w-5 text-blue-500 bg-gray-100 rounded border border-gray-400 shadow-sm 
+							focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+							hover:bg-blue-50 checked:bg-blue-500 transition duration-200" 
+						/>
 						<span className="ml-2 text-sm">Force Reload</span>
 					</label>
 					<Button type="submit">Preview</Button>
