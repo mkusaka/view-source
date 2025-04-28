@@ -114,6 +114,13 @@ app.get('/preview', async (c) => {
 		
 		streamResponse.headers.set('Cache-Control', 'public, max-age=300'); // TTL 5 minutes
 		
+		const cacheResponse = new Response(html, {
+			headers: { 'Content-Type': 'text/html; charset=utf-8' },
+		});
+		cacheResponse.headers.set('Cache-Control', 'public, max-age=300');
+		
+		await caches.default.put(cacheKey, cacheResponse.clone());
+		
 		return streamResponse;
 	} catch (e: any) {
 		return c.text(`Error: ${e.message}`, 502);
