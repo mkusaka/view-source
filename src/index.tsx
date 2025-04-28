@@ -89,45 +89,30 @@ app.get('/preview', async (c) => {
 		const htmlSuffix = `</body>
 </html>`;
 
-		const { CodeToTokenTransformStream } = await import('shiki-stream');
-		
-		const codeStream = new ReadableStream({
+		const highlighted = highlighter.codeToHtml(code, {
+			lang: 'html',
+			theme: 'github-dark',
+		});
+
+		const html = `${htmlPrefix}${highlighted}${htmlSuffix}`;
+
+		const encoder = new TextEncoder();
+		const stream = new ReadableStream({
 			start(controller) {
-				controller.enqueue(code);
+				const chunkSize = 1024;
+				for (let i = 0; i < html.length; i += chunkSize) {
+					const chunk = html.substring(i, i + chunkSize);
+					controller.enqueue(encoder.encode(chunk));
+				}
 				controller.close();
 			}
 		});
-		
-		const highlightTransform = new CodeToTokenTransformStream({
-			lang: 'html',
-			theme: 'github-dark',
-			highlighter,
-			allowRecalls: true
-		});
-		
-		const prefixTransform = new TransformStream({
-			start(controller) {
-				controller.enqueue(htmlPrefix);
-			},
-		});
-		
-		const suffixTransform = new TransformStream({
-			flush(controller) {
-				controller.enqueue(htmlSuffix);
-			},
-		});
-		
-		const stream = codeStream
-			.pipeThrough(highlightTransform)
-			.pipeThrough(prefixTransform)
-			.pipeThrough(suffixTransform);
 		
 		const streamResponse = new Response(stream, {
 			headers: { 'Content-Type': 'text/html; charset=utf-8' },
 		});
 		
 		streamResponse.headers.set('Cache-Control', 'public, max-age=300'); // TTL 5 minutes
-		
 		
 		return streamResponse;
 	} catch (e: any) {
