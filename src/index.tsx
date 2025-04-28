@@ -64,23 +64,13 @@ app.get('/preview', async (c) => {
 		if (cached) return cached;
 	}
 
-	// fetch + highlight
-	let snippet: string;
 	try {
 		const res = await fetch(url);
 		if (!res.ok) throw new Error(res.statusText);
 		const code = await res.text();
 		const highlighter = await highlighterPromise;
-		snippet = highlighter.codeToHtml(code, {
-			lang: 'html',
-			theme: 'github-dark',
-		});
-	} catch (e: any) {
-		return c.text(`Error: ${e.message}`, 502);
-	}
 
-	// Build response
-	const html = `<!DOCTYPE html>
+		const htmlPrefix = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -94,18 +84,55 @@ app.get('/preview', async (c) => {
   }
 </style>
 </head>
-<body>
-${snippet}
-</body>
+<body>`;
+
+		const htmlSuffix = `</body>
 </html>`;
 
-	const res = new Response(html, {
-		headers: { 'Content-Type': 'text/html; charset=utf-8' },
-	});
-	res.headers.set('Cache-Control', 'public, max-age=300'); // TTL 5 minutes
-	await caches.default.put(cacheKey, res.clone());
-
-	return res;
+		const { CodeToTokenTransformStream } = await import('shiki-stream');
+		
+		const codeStream = new ReadableStream({
+			start(controller) {
+				controller.enqueue(code);
+				controller.close();
+			}
+		});
+		
+		const highlightTransform = new CodeToTokenTransformStream({
+			lang: 'html',
+			theme: 'github-dark',
+			highlighter,
+			allowRecalls: true
+		});
+		
+		const prefixTransform = new TransformStream({
+			start(controller) {
+				controller.enqueue(htmlPrefix);
+			},
+		});
+		
+		const suffixTransform = new TransformStream({
+			flush(controller) {
+				controller.enqueue(htmlSuffix);
+			},
+		});
+		
+		const stream = codeStream
+			.pipeThrough(highlightTransform)
+			.pipeThrough(prefixTransform)
+			.pipeThrough(suffixTransform);
+		
+		const streamResponse = new Response(stream, {
+			headers: { 'Content-Type': 'text/html; charset=utf-8' },
+		});
+		
+		streamResponse.headers.set('Cache-Control', 'public, max-age=300'); // TTL 5 minutes
+		
+		
+		return streamResponse;
+	} catch (e: any) {
+		return c.text(`Error: ${e.message}`, 502);
+	}
 });
 
 export default app;

@@ -19,6 +19,7 @@
 	},
 	"dependencies": {
 		"hono": "^4.7.7",
-		"shiki": "^3.3.0"
+		"shiki": "^3.3.0",
+		"shiki-stream": "^0.1.2"
 	}
 }
