@@ -70,12 +70,7 @@ app.get('/preview', async (c) => {
 		const code = await res.text();
 		const highlighter = await highlighterPromise;
 
-		const highlighted = highlighter.codeToHtml(code, {
-			lang: 'html',
-			theme: 'github-dark',
-		});
-
-		const html = `<!DOCTYPE html>
+		const htmlHeader = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -89,20 +84,54 @@ app.get('/preview', async (c) => {
   }
 </style>
 </head>
-<body>
-${highlighted}
-</body>
-</html>`;
+<body>`;
 
-		const response = new Response(html, {
+		const htmlFooter = `</body></html>`;
+
+		const encoder = new TextEncoder();
+		
+		const stream = new ReadableStream({
+			start(controller) {
+				controller.enqueue(encoder.encode(htmlHeader));
+				
+				const lines = code.split('\n');
+				const linesPerChunk = 50;
+				
+				for (let i = 0; i < lines.length; i += linesPerChunk) {
+					const chunk = lines.slice(i, i + linesPerChunk).join('\n');
+					
+					const highlighted = highlighter.codeToHtml(chunk, {
+						lang: 'html',
+						theme: 'github-dark',
+					});
+					
+					controller.enqueue(encoder.encode(highlighted));
+				}
+				
+				controller.enqueue(encoder.encode(htmlFooter));
+				controller.close();
+			}
+		});
+		
+		const streamResponse = new Response(stream, {
 			headers: { 'Content-Type': 'text/html; charset=utf-8' },
 		});
 		
-		response.headers.set('Cache-Control', 'public, max-age=300'); // TTL 5 minutes
+		streamResponse.headers.set('Cache-Control', 'public, max-age=300'); // TTL 5 minutes
 		
-		await caches.default.put(cacheKey, response.clone());
+		const fullHtml = `${htmlHeader}${highlighter.codeToHtml(code, {
+			lang: 'html',
+			theme: 'github-dark',
+		})}${htmlFooter}`;
 		
-		return response;
+		const cacheResponse = new Response(fullHtml, {
+			headers: { 'Content-Type': 'text/html; charset=utf-8' },
+		});
+		cacheResponse.headers.set('Cache-Control', 'public, max-age=300');
+		
+		await caches.default.put(cacheKey, cacheResponse.clone());
+		
+		return streamResponse;
 	} catch (e: any) {
 		return c.text(`Error: ${e.message}`, 502);
 	}
