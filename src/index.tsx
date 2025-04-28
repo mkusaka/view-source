@@ -70,7 +70,12 @@ app.get('/preview', async (c) => {
 		const code = await res.text();
 		const highlighter = await highlighterPromise;
 
-		const htmlPrefix = `<!DOCTYPE html>
+		const highlighted = highlighter.codeToHtml(code, {
+			lang: 'html',
+			theme: 'github-dark',
+		});
+
+		const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -84,44 +89,20 @@ app.get('/preview', async (c) => {
   }
 </style>
 </head>
-<body>`;
-
-		const htmlSuffix = `</body>
+<body>
+${highlighted}
+</body>
 </html>`;
 
-		const highlighted = highlighter.codeToHtml(code, {
-			lang: 'html',
-			theme: 'github-dark',
-		});
-
-		const html = `${htmlPrefix}${highlighted}${htmlSuffix}`;
-
-		const encoder = new TextEncoder();
-		const stream = new ReadableStream({
-			start(controller) {
-				const chunkSize = 1024;
-				for (let i = 0; i < html.length; i += chunkSize) {
-					const chunk = html.substring(i, i + chunkSize);
-					controller.enqueue(encoder.encode(chunk));
-				}
-				controller.close();
-			}
-		});
-		
-		const streamResponse = new Response(stream, {
+		const response = new Response(html, {
 			headers: { 'Content-Type': 'text/html; charset=utf-8' },
 		});
 		
-		streamResponse.headers.set('Cache-Control', 'public, max-age=300'); // TTL 5 minutes
+		response.headers.set('Cache-Control', 'public, max-age=300'); // TTL 5 minutes
 		
-		const cacheResponse = new Response(html, {
-			headers: { 'Content-Type': 'text/html; charset=utf-8' },
-		});
-		cacheResponse.headers.set('Cache-Control', 'public, max-age=300');
+		await caches.default.put(cacheKey, response.clone());
 		
-		await caches.default.put(cacheKey, cacheResponse.clone());
-		
-		return streamResponse;
+		return response;
 	} catch (e: any) {
 		return c.text(`Error: ${e.message}`, 502);
 	}
