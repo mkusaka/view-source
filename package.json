@@ -4,7 +4,7 @@
 	"private": true,
 	"scripts": {
 		"deploy": "wrangler deploy",
-		"preview": "wrangler versions uploa",
+		"preview": "wrangler versions upload",
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
 		"test": "vitest",
